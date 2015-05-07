@@ -1,17 +1,14 @@
 module Doorkeeper
   class AuthorizationsController < Doorkeeper::ApplicationController
+    before_filter :validate_authorization_code_request!, only: :new
     before_filter :authenticate_resource_owner!
 
     def new
-      if pre_auth.authorizable?
-        if skip_authorization? || matching_token?
-          auth = authorization.authorize
-          redirect_to auth.redirect_uri
-        else
-          render :new
-        end
+      if skip_authorization? || matching_token?
+        auth = authorization.authorize
+        redirect_to auth.redirect_uri
       else
-        render :error
+        render :new
       end
     end
 
@@ -25,6 +22,12 @@ module Doorkeeper
     end
 
     private
+
+    def validate_authorization_code_request!
+      if ! pre_auth.authorizable?
+        render :error
+      end
+    end
 
     def matching_token?
       AccessToken.matching_token_for pre_auth.client,
